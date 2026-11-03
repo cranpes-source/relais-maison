@@ -39,11 +39,16 @@ async function open(m, control) {
   console.log('Demande :', m.host + ':' + m.port);
   try {
     if (!/^[a-f0-9]{16}$/.test(m.id) || typeof m.host !== 'string' || !ALLOWED_PORTS.includes(m.port)) throw new Error('refusé');
-    const { address } = await dns.lookup(m.host);
+    let address;
+    try { ({ address } = await dns.lookup(m.host, { family: 4 })); } // IPv4 d’abord : beaucoup de réseaux n’ont pas d’IPv6
+    catch { ({ address } = await dns.lookup(m.host)); }
     if (isPrivate(address)) throw new Error('adresse privée refusée');
 
     const sock = net.connect({ host: address, port: m.port });
     sock.setTimeout(300000, () => sock.destroy());
+    const ct = setTimeout(() => { console.error('Délai dépassé vers', m.host); sock.destroy(); }, 15000);
+    sock.once('connect', () => clearTimeout(ct));
+    sock.once('close', () => clearTimeout(ct));
     const ws = new WebSocket(`${WS_BASE}/agent-stream?id=${m.id}`, { headers: { 'x-agent-key': KEY } });
     const stream = WebSocket.createWebSocketStream(ws);
     const stop = () => { sock.destroy(); ws.terminate(); };
