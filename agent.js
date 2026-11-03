@@ -36,6 +36,7 @@ function isPrivate(ip) {
 
 async function open(m, control) {
   const fail = () => { try { control.send(JSON.stringify({ t: 'fail', id: m.id })); } catch { /* ignoré */ } };
+  console.log('Demande :', m.host + ':' + m.port);
   try {
     if (!/^[a-f0-9]{16}$/.test(m.id) || typeof m.host !== 'string' || !ALLOWED_PORTS.includes(m.port)) throw new Error('refusé');
     const { address } = await dns.lookup(m.host);
@@ -46,13 +47,14 @@ async function open(m, control) {
     const ws = new WebSocket(`${WS_BASE}/agent-stream?id=${m.id}`, { headers: { 'x-agent-key': KEY } });
     const stream = WebSocket.createWebSocketStream(ws);
     const stop = () => { sock.destroy(); ws.terminate(); };
-    sock.on('error', stop);
+    sock.on('error', (e) => { console.error('Erreur de connexion à', m.host, ':', e.message); stop(); });
     stream.on('error', stop);
     ws.on('error', stop);
     ws.on('close', stop);
     sock.on('close', stop);
     sock.once('connect', () => { sock.pipe(stream); stream.pipe(sock); });
-  } catch {
+  } catch (e) {
+    console.error('Refusé ou échec :', m.host, '-', e.message);
     fail();
   }
 }
