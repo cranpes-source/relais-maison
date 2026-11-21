@@ -94,6 +94,7 @@ const originOf = (host) => (/^(localhost|127\.|\[?::1)/.test(host) ? 'http://' :
 function termuxCommand(origin, key, name) {
   return [
     'pkg update -y',
+    'pkg upgrade -y -o Dpkg::Options::=--force-confnew', // mise à jour complète : installer nodejs seul peut le casser (bibliothèque libicu manquante)
     'pkg install -y nodejs curl',
     'mkdir -p ~/partage',
     'cd ~/partage',
