@@ -117,6 +117,7 @@ function connect() {
       const m = JSON.parse(d);
       if (m.t === 'open') open(m, ws);
       else if (m.t === 'save') saveStore(m.guests);
+      else if (m.t === 'stop') { console.log('Arrêt demandé depuis le tableau de bord.'); process.exit(99); }
       else if (m.t === 'welcome') {
         console.log(welcomed ? `Partage en ligne sous le nom « ${m.name} ».` : `\n✅ Terminé : votre connexion est partagée sous le nom « ${m.name} ».\n   Gardez Termux ouvert et le téléphone branché.\n   Les demandes s’affichent dans votre tableau de bord.\n`);
         welcomed = true;
